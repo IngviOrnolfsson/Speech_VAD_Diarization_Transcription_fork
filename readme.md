@@ -1,6 +1,6 @@
-# Conversation VAD & Labeler Pipeline
+# Conversational Speech Labeler Pipeline
 
-**conversation_vad_labeler_package** is a Python package for automated processing of dyadic conversation recordings. The pipeline includes:  
+**conversational_speech_labeler** is a Python package for automated processing of dyadic conversation recordings. The pipeline includes:  
 
 - Voice activity detection (VAD)  
 - Segment filtering (short segments & low-energy filtering)  
