@@ -368,4 +368,6 @@ uv pip install -r requirements-lock-uv.txt --upgrade
 
 ## License
 
-[Add your license]
+**TODO: Temporary** - All Rights Reserved - Copyright (c) 2025 Harald Skat-Rørdam, Hanlu He
+
+No license is currently granted for use, modification, or distribution of this software. An open-source license will be applied once determined by the copyright holders. See [LICENSE](LICENSE) file for details.

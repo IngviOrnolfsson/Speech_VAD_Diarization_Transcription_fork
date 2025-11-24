@@ -16,6 +16,7 @@ setup(
     long_description_content_type="text/markdown",
     author="Harald Skat-Rørdam, Hanlu He",
     author_email="harsk@dtu.dk",
+    license="Proprietary",
     packages=["speech_vad_diarization"],
     package_dir={"speech_vad_diarization": "src"},
     python_requires=">=3.10",
