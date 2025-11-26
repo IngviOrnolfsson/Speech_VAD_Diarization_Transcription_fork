@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "speech-vad-diarization-transcription"
-version = "1.0.0"
+version = "1.0.1"
 description = "WP1: Conversational Speech Processing Pipeline"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -83,6 +83,7 @@ extend-exclude = '''
     | \.mypy_cache
     | \.tox
     | \natural-turn-transcription
+    | \tmp_scripts
   )/
   | ^speech_separation\.ipynb$
   | ^speech_separation_chunked\.py$
@@ -137,6 +138,7 @@ skip_glob = [
     "interim/**",
     "pretrained_models/**",
     "natural-turn-transcription/**",
+    "tmp_scripts/**",
     "speech_separation.ipynb",
     "speech_separation_chunked.py",
     "run_separation_and_pipeline.py",
@@ -197,6 +199,7 @@ exclude = '''
   | interim/
   | pretrained_models/
   | natural-turn-transcription/
+  | tmp_scripts/
   | speech_separation\.ipynb$
   | speech_separation_chunked\.py$
   | run_separation_and_pipeline\.py$

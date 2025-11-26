@@ -2,6 +2,9 @@
 
 End-to-end processing of conversation recordings with support for both pre-separated and mixed audio. Produces cleaned, transcribed, and labeled segments ready for ELAN or manual inspection.
 
+![Pipeline Flowchart](docs/figures/Protocol.png)
+*Pipeline architecture: splits at Stage 1 (VAD vs Diarization) based on input type, then converges for unified processing.*
+
 ## Features
 
 - **Multiple VAD methods**: rVAD (energy-based) or Pyannote.audio (neural)
@@ -36,7 +39,7 @@ source .venv/bin/activate
 
 # ALL FROM CONDA: Slower but fully self-contained
 make install-conda
-conda activate wp1_pyannote
+conda activate wp1
 ```
 
 ### Manual Installation
@@ -106,7 +109,7 @@ cd Speech_VAD_Diarization_Transcription
 
 # Create environment
 conda env create -f environment.yml
-conda activate wp1_pyannote
+conda activate wp1
 
 pip install -e .
 ```
@@ -178,28 +181,44 @@ from run_pipeline_only import run_pipeline_with_existing_vad
 | `whisper_language` | `"en"` | Target language code |
 | `whisper_device` | `"auto"` | `"auto"`, `"cuda"`, or `"cpu"` |
 | `batch_size` | `60.0` | Batch size in seconds |
+| `export_elan` | `True` | Export ELAN-compatible tab-delimited file |
 
 ---
 
 ## Output Files
 
+![Output Structure](docs/figures/Protocol-2.png)
+*Each speaker track consists of discrete, timestamped speech intervals (Turns or Backchannels).*
+
 ```
 outputs/
 └── experiment_name/
-    ├── vad/
-    │   ├── speaker1_vad.txt       # VAD timestamps
+    ├── P1/                            # Speaker-specific folder
+    │   └── speaker1_vad.txt           # VAD timestamps
+    ├── P2/
     │   └── speaker2_vad.txt
-    ├── merged_turns.txt           # Merged conversation turns
+    ├── merged_turns.txt               # Merged conversation turns
+    ├── raw_transcriptions.txt         # Raw Whisper output
     ├── classified_transcriptions.txt  # With entropy labels
-    └── final_labels.txt           # Context-merged annotations
+    ├── final_labels.txt               # Context-merged annotations (TSV)
+    └── final_labels_elan.txt          # ELAN-compatible format
 ```
 
-**Format (TSV):**
+**Pipeline output format (`final_labels.txt`):**
 ```
-Start_Sec	End_Sec	Speaker	Text	Label
-0.50	2.30	P1	"Hello there"	speech
-2.45	3.10	P2	"Mm-hmm"	backchannel
+speaker	start_sec	end_sec	transcription	entropy	type
+P1	0.50	2.30	Hello there	2.31	turn
+P2	2.45	3.10	Mm-hmm	0.00	backchannel
 ```
+
+**ELAN import format (`final_labels_elan.txt`):**
+```
+tier	begin	end	annotation
+P1_turn	500	2300	Hello there
+P2_backchannel	2450	3100	Mm-hmm
+```
+
+To import in ELAN: **File → Import → Tab-delimited Text...** (skip first line: Yes)
 
 ---
 
@@ -317,14 +336,27 @@ uv pip install -r requirements-lock-uv.txt --upgrade
 
 ```bash
 make help          # Show all available commands
-make install-uv    # Install with UV (recommended)
+make install       # Install with hybrid approach (recommended)
+make install-uv    # Install with UV only (requires system FFmpeg)
 make install-conda # Install with Conda/Mamba
-make lint          # Run linting (ruff)
-make format        # Format code (ruff + isort)
-make test          # Run tests
+make lint          # Run linting (flake8, mypy, isort, black)
+make format        # Format code (isort + black)
 make clean         # Remove build artifacts
-make clean-all     # Remove everything including environments
 ```
+
+### Git Hooks (Automatic Linting)
+
+The repository includes a pre-commit hook that automatically runs `make format` and `make lint` before each commit:
+
+```bash
+# Install git hooks (done automatically, but can be re-run)
+./scripts/install_hooks.sh
+```
+
+When you commit in VS Code (or via command line):
+1. Code is automatically formatted
+2. Linting checks run
+3. Commit is blocked if linting fails
 
 ### View Installed Packages
 ```bash
@@ -335,7 +367,7 @@ conda list  # If using conda
 ### Update Environment to Match Working Setup
 ```bash
 # Using UV (recommended)
-conda activate wp1_pyannote
+conda activate wp1
 pip list --format=freeze | sed 's/grpcio==1.74.1/grpcio>=1.74.0/; s/matplotlib==3.10.8/matplotlib>=3.10.0/' > requirements-lock-uv.txt
 
 # Then apply to another environment

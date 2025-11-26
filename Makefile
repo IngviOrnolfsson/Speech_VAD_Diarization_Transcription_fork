@@ -61,10 +61,6 @@ install-conda:
 
 lint:
 	@echo "Running linting checks..."
-	@command -v flake8 >/dev/null 2>&1 || { echo "Installing flake8..."; pip install flake8; }
-	@command -v black >/dev/null 2>&1 || { echo "Installing black..."; pip install black; }
-	@command -v isort >/dev/null 2>&1 || { echo "Installing isort..."; pip install isort; }
-	@command -v mypy >/dev/null 2>&1 || { echo "Installing mypy..."; pip install mypy; }
 	flake8 .
 	isort --check --diff .
 	black --check .
@@ -73,8 +69,6 @@ lint:
 
 format:
 	@echo "Formatting code..."
-	@command -v isort >/dev/null 2>&1 || { echo "Installing isort..."; pip install isort; }
-	@command -v black >/dev/null 2>&1 || { echo "Installing black..."; pip install black; }
 	isort .
 	black .
 	@echo "✓ Formatting complete"
@@ -89,4 +83,5 @@ clean:
 	rm -rf src/*.egg-info/
 	find . -type d -name ".pytest_cache" -exec rm -rf {} + 2>/dev/null || true
 	find . -type d -name ".ruff_cache" -exec rm -rf {} + 2>/dev/null || true
+	find . -type d -name ".mypy_cache" -exec rm -rf {} + 2>/dev/null || true
 	@echo "✓ Cleanup complete"

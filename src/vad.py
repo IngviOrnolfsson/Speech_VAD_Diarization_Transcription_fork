@@ -6,7 +6,7 @@ https://github.com/hanlululu/Conversational_speech_labeling_pipeline
 
 import os
 import warnings
-from typing import Dict, List, Tuple
+from typing import Any, Dict, List, Tuple
 
 import torch
 import torchaudio
@@ -124,7 +124,7 @@ class SpeechActivityDetector:
             if auth_token is not None:
                 self.pipeline = Pipeline.from_pretrained(
                     "pyannote/speaker-diarization-community-1",
-                    use_auth_token=auth_token,  # type: ignore[call-arg]
+                    token=auth_token,
                 )
             else:
                 self.pipeline = Pipeline.from_pretrained(
@@ -178,11 +178,11 @@ class SpeechActivityDetector:
             intervals = [(d["start"], d["end"]) for d in speech_timestamps]
         elif self.vad_type == "whisper":
             # Run Whisper ASR with timestamps
-            result = self.pipe(
+            result: list[dict[str, Any]] = self.pipe(
                 wav_path, return_timestamps=True, generate_kwargs={"language": "da"}
             )
             # Extract intervals from chunks
-            chunks = result["chunks"]  # type: ignore
+            chunks = result[0]["chunks"]
             intervals = []
             for chunk in chunks:
                 timestamp = chunk["timestamp"]

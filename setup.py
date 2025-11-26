@@ -10,7 +10,7 @@ README = (HERE / "README.md").read_text(encoding="utf-8")
 
 setup(
     name="speech_vad_diarization",
-    version="0.1.0",
+    version="1.0.1",
     description="Speech VAD, diarization and transcription pipeline",
     long_description=README,
     long_description_content_type="text/markdown",

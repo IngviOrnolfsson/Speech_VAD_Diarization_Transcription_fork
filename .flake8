@@ -33,6 +33,7 @@ exclude =
     speech_separation_chunked.py,
     run_separation_and_pipeline.py,
     run_pipeline_only.py,
+    tmp_scripts,
     .mypy_cache,
     .pytest_cache,
     .ruff_cache,

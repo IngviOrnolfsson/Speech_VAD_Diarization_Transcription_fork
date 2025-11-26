@@ -69,6 +69,7 @@ def _triad_example_inputs() -> tuple[dict[str, str], str, str]:
         output_directory,
     )
 
+
 def _diad_example_inputs() -> tuple[dict[str, str], str, str]:
     base = Path("examples/recordings")
     vad_type = "silero"
@@ -81,6 +82,7 @@ def _diad_example_inputs() -> tuple[dict[str, str], str, str]:
         vad_type,
         output_directory,
     )
+
 
 def main() -> None:
     speakers_audio, vad_type, output_directory = _diad_example_inputs()

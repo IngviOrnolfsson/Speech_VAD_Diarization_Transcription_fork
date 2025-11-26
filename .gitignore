@@ -45,6 +45,7 @@ interim/
 pretrained_models/
 natural-turn-transcription/
 logs/
+tmp_scripts/
 speech_separation.ipynb
 speech_separation_chunked.py
 run_separation_and_pipeline.py

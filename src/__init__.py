@@ -13,4 +13,5 @@ __all__ = [
 __version__ = "0.1.0"
 
 from .conversation import process_conversation  # noqa: E402
-from .transcription import load_whisper_model, transcribe_segments  # noqa: E402
+from .transcription import load_whisper_model  # noqa: E402
+from .transcription import transcribe_segments

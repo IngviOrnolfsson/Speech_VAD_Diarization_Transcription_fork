@@ -55,12 +55,14 @@ def _export_to_elan_format(df: pd.DataFrame, output_path: str) -> None:
 
         # Tier name combines speaker and type
         tier_name = f"{speaker}_{utt_type}"
-        output_data.append({
-            "tier": tier_name,
-            "begin": start_ms,
-            "end": end_ms,
-            "annotation": transcription,
-        })
+        output_data.append(
+            {
+                "tier": tier_name,
+                "begin": start_ms,
+                "end": end_ms,
+                "annotation": transcription,
+            }
+        )
 
     output_df = pd.DataFrame(output_data)
     output_df.to_csv(output_path, sep="\t", index=False)
