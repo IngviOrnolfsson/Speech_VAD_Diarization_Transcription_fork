@@ -124,7 +124,7 @@ class SpeechActivityDetector:
             if auth_token is not None:
                 self.pipeline = Pipeline.from_pretrained(
                     "pyannote/speaker-diarization-community-1",
-                    use_auth_token=auth_token,
+                    use_auth_token=auth_token,  # type: ignore[call-arg]
                 )
             else:
                 self.pipeline = Pipeline.from_pretrained(
@@ -132,7 +132,8 @@ class SpeechActivityDetector:
                 )
             if device is None:
                 device = "cuda" if torch.cuda.is_available() else "cpu"
-            self.pipeline.to(torch.device(device))
+            if self.pipeline is not None:
+                self.pipeline.to(torch.device(device))
         else:
             raise ValueError(f"Unsupported vad_type: {vad_type}")
 
@@ -188,6 +189,7 @@ class SpeechActivityDetector:
                 if isinstance(timestamp, (list, tuple)) and len(timestamp) == 2:
                     intervals.append((float(timestamp[0]), float(timestamp[1])))
         elif self.vad_type == "pyannote":
+            assert self.pipeline is not None, "Pipeline not initialized"
             diarization = self.pipeline(wav_path)
             raw_intervals = []
             for turn, _, _ in diarization.itertracks(yield_label=True):
@@ -241,6 +243,7 @@ class SpeechActivityDetector:
         basename = os.path.splitext(os.path.basename(wav_path))[0]
 
         print(f"Running Diarization on {wav_path} using {self.vad_type}...")
+        assert self.pipeline is not None, "Pipeline not initialized"
         with ProgressHook() as hook:
             diarization = self.pipeline(wav_path, hook=hook)
 

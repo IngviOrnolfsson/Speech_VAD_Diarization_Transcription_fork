@@ -152,9 +152,7 @@ def _transcribe_single_with_retry(
                 torch.cuda.reset_peak_memory_stats()
 
             # CRITICAL: Clear model's past_key_values cache
-            if hasattr(pipe.model, "model") and hasattr(
-                pipe.model.model, "decoder"
-            ):
+            if hasattr(pipe.model, "model") and hasattr(pipe.model.model, "decoder"):
                 # Force recreation of decoder cache to avoid accumulation
                 pipe.model.model.decoder.past_key_values = None
 
@@ -177,7 +175,7 @@ def _transcribe_single_with_retry(
                 torch.cuda.empty_cache()
             gc.collect()
 
-            return text
+            return str(text)
 
         except (RuntimeError, torch.cuda.OutOfMemoryError) as e:
             error_msg = str(e).lower()
@@ -197,13 +195,13 @@ def _transcribe_single_with_retry(
                 if attempt == max_retries - 1:
                     # Last GPU attempt failed - try CPU as final fallback
                     print(
-                        "    → All GPU attempts failed. "
-                        "Trying CPU as last resort..."
+                        "    → All GPU attempts failed. " "Trying CPU as last resort..."
                     )
                     try:
-                        # Move model to CPU and convert to float32 for CPU compatibility
-                        pipe.model.to("cpu", dtype=torch.float32)
-                        pipe.dtype = torch.float32
+                        # Move model to CPU and convert to float32 for CPU
+                        cpu_dev = "cpu"
+                        pipe.model.to(cpu_dev, dtype=torch.float32)  # type: ignore
+                        pipe.dtype = torch.float32  # type: ignore[misc]
                         if torch.cuda.is_available():
                             torch.cuda.empty_cache()
                         gc.collect()
@@ -222,20 +220,22 @@ def _transcribe_single_with_retry(
                         print("    ✓ Successfully transcribed on CPU")
 
                         # Move model back to original device and dtype
-                        pipe.model.to(original_device, dtype=original_dtype)
-                        pipe.dtype = original_dtype
+                        dev, dt = original_device, original_dtype
+                        pipe.model.to(dev, dtype=dt)  # type: ignore
+                        pipe.dtype = original_dtype  # type: ignore[misc]
                         if torch.cuda.is_available():
                             torch.cuda.empty_cache()
                         gc.collect()
 
-                        return text
+                        return str(text)
 
                     except Exception as cpu_error:
                         print(f"    ❌ CPU fallback also failed: {cpu_error}")
                         # Move model back to original device and dtype
                         try:
-                            pipe.model.to(original_device, dtype=original_dtype)
-                            pipe.dtype = original_dtype
+                            dev, dt = original_device, original_dtype
+                            pipe.model.to(dev, dtype=dt)  # type: ignore
+                            pipe.dtype = original_dtype  # type: ignore[misc]
                         except Exception as restore_error:
                             print(
                                 f"    ⚠️  Could not restore model to GPU: "
@@ -369,7 +369,8 @@ def _transcribe_batch(
 
                 # Process second half
                 # second_half_files = [
-                #     files_to_transcribe[i] for i in range(mid, len(files_to_transcribe))
+                #     files_to_transcribe[i]
+                #     for i in range(mid, len(files_to_transcribe))
                 # ]
                 second_half_caches = [
                     batch_caches[file_indices[i]]

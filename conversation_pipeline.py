@@ -9,6 +9,7 @@ from pathlib import Path
 # Load .env file if python-dotenv is available
 try:
     from dotenv import load_dotenv
+
     load_dotenv()
 except ImportError:
     pass  # python-dotenv not installed, rely on system environment variables
@@ -18,6 +19,7 @@ from speech_vad_diarization import process_conversation
 # Optional: CarbonTracker for energy monitoring
 try:
     from carbontracker.tracker import CarbonTracker
+
     CARBONTRACKER_AVAILABLE = True
 except ImportError:
     CARBONTRACKER_AVAILABLE = False
@@ -28,7 +30,7 @@ except ImportError:
 ENABLE_CARBON_TRACKING = True  # Set to False to disable carbon tracking
 
 
-def _default_example_inputs() -> dict[str, str]:
+def _default_example_inputs() -> tuple[dict[str, str], str, str]:
     base = Path("examples/recordings")
     vad_type = "rvad"
     output_directory = "outputs/diad"
@@ -42,7 +44,7 @@ def _default_example_inputs() -> dict[str, str]:
     )
 
 
-def _diarize_example_inputs() -> str:
+def _diarize_example_inputs() -> tuple[str, str, str]:
     base = Path("examples/coral")
     vad_type = "pyannote"
     output_directory = "outputs/diarize"
@@ -53,7 +55,7 @@ def _diarize_example_inputs() -> str:
     )
 
 
-def _triad_example_inputs() -> dict[str, str]:
+def _triad_example_inputs() -> tuple[dict[str, str], str, str]:
     base = Path("examples/Triad")
     vad_type = "rvad"
     output_directory = "outputs/triad_rvad"
@@ -94,8 +96,10 @@ def main() -> None:
         if api_key:
             tracker_kwargs["api_keys"] = {"electricitymaps": api_key}
         else:
-            print("Note: ELECTRICITYMAPS_API_KEY not set. "
-                  "Carbon tracking will run without CO2 intensity data.")
+            print(
+                "Note: ELECTRICITYMAPS_API_KEY not set. "
+                "Carbon tracking will run without CO2 intensity data."
+            )
         tracker = CarbonTracker(**tracker_kwargs)
         tracker.epoch_start()
     elif ENABLE_CARBON_TRACKING and not CARBONTRACKER_AVAILABLE:

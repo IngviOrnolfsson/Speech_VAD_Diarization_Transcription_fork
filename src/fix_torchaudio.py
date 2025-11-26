@@ -7,11 +7,12 @@ the deprecation warning.
 """
 
 import warnings
+from typing import List
 
 import torchaudio
 
 
-def _list_audio_backends():
+def _list_audio_backends() -> List[str]:
     """Dummy implementation that returns soundfile backend."""
     return ["soundfile"]
 

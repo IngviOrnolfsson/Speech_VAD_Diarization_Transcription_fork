@@ -130,10 +130,11 @@ def process_conversation(
             vad_paths = {}
             speakers = []
             for speaker_dir in speaker_dirs_found:
+                audio_basename = os.path.splitext(os.path.basename(audio_path))[0]
                 vad_file = os.path.join(
                     output_dir,
                     speaker_dir,
-                    f"{os.path.splitext(os.path.basename(audio_path))[0]}_{speaker_dir}_vad.txt",
+                    f"{audio_basename}_{speaker_dir}_vad.txt",
                 )
                 if os.path.exists(vad_file):
                     speakers.append(speaker_dir)
