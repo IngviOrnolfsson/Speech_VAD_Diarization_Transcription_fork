@@ -1,10 +1,18 @@
-"""CLI helper for the conversation VAD labeler package."""
+"""
+Example usage of the conversation VAD labeling pipeline.
+
+This script demonstrates different configurations for processing conversation
+recordings. Modify the example functions or create your own based on these
+templates.
+
+Usage:
+    python conversation_pipeline.py
+"""
 
 from __future__ import annotations
 
 import os
 import time
-from pathlib import Path
 
 # Load .env file if python-dotenv is available
 try:
@@ -24,123 +32,229 @@ try:
 except ImportError:
     CARBONTRACKER_AVAILABLE = False
 
-# ============================================
-# USER CONFIGURATION
-# ============================================
-ENABLE_CARBON_TRACKING = True  # Set to False to disable carbon tracking
+
+# ============================================================================
+# CONFIGURATION
+# ============================================================================
+
+ENABLE_CARBON_TRACKING = False  # Set to True to enable energy/emissions tracking
 
 
-def _default_example_inputs() -> tuple[dict[str, str], str, str]:
-    base = Path("examples/recordings")
-    vad_type = "rvad"
-    output_directory = "outputs/diad"
-    return (
-        {
-            "P1": str(base / "EXP9_None_p1_trial2.wav"),
-            "P2": str(base / "EXP9_None_p2_trial2.wav"),
+# ============================================================================
+# EXAMPLE CONFIGURATIONS
+# ============================================================================
+
+
+def example_dyad() -> dict:
+    """
+    Dyad example: Two speakers with separate audio files.
+
+    Use this when each speaker has their own microphone/recording.
+    VAD options: 'silero' (neural, recommended) or 'rvad' (energy-based, faster)
+    """
+    return {
+        "speakers_audio": {
+            "P1": "path/to/speaker1.wav",
+            "P2": "path/to/speaker2.wav",
         },
-        vad_type,
-        output_directory,
-    )
+        "output_dir": "outputs/dyad",
+        "vad_type": "silero",
+    }
 
 
-def _diarize_example_inputs() -> tuple[str, str, str]:
-    base = Path("examples/coral")
-    vad_type = "pyannote"
-    output_directory = "outputs/diarize"
-    return (
-        str(base / "conv_0cbf895a2078529eb4a9d8b212e710c9.wav"),
-        vad_type,
-        output_directory,
-    )
+def example_triad() -> dict:
+    """
+    Triad example: Three speakers with separate audio files.
 
-
-def _triad_example_inputs() -> tuple[dict[str, str], str, str]:
-    base = Path("examples/Triad")
-    vad_type = "rvad"
-    output_directory = "outputs/triad_rvad"
-    return (
-        {
-            "P1": str(base / "EXP2_None_P1_T1.wav"),
-            "P2": str(base / "EXP2_None_P2_T1.wav"),
-            "P3": str(base / "EXP2_None_P3_T1.wav"),
+    Same as dyad but with three participants.
+    """
+    return {
+        "speakers_audio": {
+            "P1": "path/to/speaker1.wav",
+            "P2": "path/to/speaker2.wav",
+            "P3": "path/to/speaker3.wav",
         },
-        vad_type,
-        output_directory,
-    )
+        "output_dir": "outputs/triad",
+        "vad_type": "rvad",
+    }
 
 
-def _diad_example_inputs() -> tuple[dict[str, str], str, str]:
-    base = Path("examples/recordings")
-    vad_type = "silero"
-    output_directory = "outputs/diad_silero"
-    return (
-        {
-            "P1": str(base / "EXP9_None_p1_trial2.wav"),
-            "P2": str(base / "EXP9_None_p2_trial2.wav"),
+def example_diarization() -> dict:
+    """
+    Diarization example: Single mixed audio file with multiple speakers.
+
+    Use this when you have one recording with all speakers mixed together.
+    Requires pyannote and a HuggingFace token with access to pyannote models.
+    """
+    return {
+        "speakers_audio": "path/to/mixed_audio.wav",
+        "output_dir": "outputs/diarized",
+        "vad_type": "pyannote",
+        "auth_token": os.environ.get("HF_TOKEN"),
+    }
+
+
+def example_custom_whisper() -> dict:
+    """
+    Example with custom Whisper model and language settings.
+
+    Demonstrates using a fine-tuned Whisper model for specific languages.
+    """
+    return {
+        "speakers_audio": {
+            "P1": "path/to/speaker1.wav",
+            "P2": "path/to/speaker2.wav",
         },
-        vad_type,
-        output_directory,
-    )
+        "output_dir": "outputs/custom",
+        "vad_type": "silero",
+        # Custom transcription settings
+        "transciption_model_name": "openai/whisper-large-v3",  # or a fine-tuned model
+        "whisper_language": "da",  # Danish
+        "whisper_device": "cuda",  # Force GPU
+    }
+
+
+def example_cpu_only() -> dict:
+    """
+    CPU-only example for systems without GPU.
+
+    Uses smaller batch sizes and CPU device for transcription.
+    """
+    return {
+        "speakers_audio": {
+            "P1": "path/to/speaker1.wav",
+            "P2": "path/to/speaker2.wav",
+        },
+        "output_dir": "outputs/cpu",
+        "vad_type": "rvad",  # rvad is fastest on CPU
+        "whisper_device": "cpu",
+        "batch_size": 15.0,  # Smaller batches for CPU
+        "whisper_transformers_batch_size": 16,
+    }
+
+
+def example_full_options() -> dict:
+    """
+    Example showing all available options with their defaults.
+
+    Modify these values based on your needs.
+    """
+    return {
+        # Input/Output
+        "speakers_audio": {
+            "P1": "path/to/speaker1.wav",
+            "P2": "path/to/speaker2.wav",
+        },
+        "output_dir": "outputs/full",
+        # VAD settings
+        "vad_type": "silero",  # 'rvad', 'silero', or 'pyannote'
+        "auth_token": None,  # Required for pyannote
+        "vad_min_duration": 0.07,  # Minimum segment duration (seconds)
+        # Energy filtering
+        "energy_margin_db": 10.0,  # dB threshold for filtering low-energy segments
+        "interactive_energy_filter": False,  # Set True to manually adjust threshold
+        # Turn merging
+        "gap_thresh": 0.5,  # Max gap to merge segments from same speaker
+        "short_utt_thresh": 1.0,  # Threshold for short utterances
+        "window_sec": 3.0,  # Look-ahead window for merging
+        "merge_short_after_long": True,
+        "merge_long_after_short": True,
+        "long_merge_enabled": True,
+        "merge_max_dur": 60.0,  # Maximum merged turn duration
+        "bridge_short_opponent": True,  # Bridge over short opponent utterances
+        # Transcription
+        "transciption_model_name": "openai/whisper-large-v3",
+        "whisper_device": "auto",  # 'auto', 'cuda', or 'cpu'
+        "whisper_language": "da",
+        "whisper_transformers_batch_size": 100,
+        "batch_size": 30.0,  # Seconds per batch
+        # Classification
+        "entropy_threshold": 1.5,  # Threshold for backchannel vs turn
+        "max_backchannel_dur": 1.0,
+        "max_gap_sec": 3.0,
+        # Caching
+        "skip_vad_if_exists": True,
+        "skip_transcription_if_exists": True,
+        # Export
+        "export_elan": True,  # Export tab-delimited file for annotation software
+    }
+
+
+# ============================================================================
+# CARBON TRACKING HELPERS
+# ============================================================================
+
+
+def create_carbon_tracker() -> CarbonTracker | None:
+    """Create and configure CarbonTracker if enabled and available."""
+    if not ENABLE_CARBON_TRACKING:
+        return None
+
+    if not CARBONTRACKER_AVAILABLE:
+        print("CarbonTracker not installed. Run: pip install carbontracker")
+        return None
+
+    api_key = os.environ.get("ELECTRICITYMAPS_API_KEY")
+    tracker_kwargs = {
+        "epochs": 1,
+        "monitor_epochs": 1,
+        "log_dir": "logs/carbon",
+        "decimal_precision": 3,
+        "ignore_errors": True,
+        # Simulation settings for systems without direct power measurement
+        # Adjust these values for your hardware
+        "sim_cpu": "AMD EPYC 7302",
+        "sim_cpu_tdp": 20,  # Estimated TDP in Watts
+        "sim_cpu_util": 0.2,  # Estimated utilization (0-1)
+    }
+
+    if api_key:
+        tracker_kwargs["api_keys"] = {"electricitymaps": api_key}
+    else:
+        print(
+            "Note: ELECTRICITYMAPS_API_KEY not set. "
+            "Carbon tracking will run without CO2 intensity data."
+        )
+
+    return CarbonTracker(**tracker_kwargs)
+
+
+# ============================================================================
+# MAIN
+# ============================================================================
 
 
 def main() -> None:
-    speakers_audio, vad_type, output_directory = _diad_example_inputs()
+    """Run the pipeline with the selected example configuration."""
+    # -------------------------------------------------------------------------
+    # SELECT YOUR EXAMPLE HERE
+    # -------------------------------------------------------------------------
+    config = example_dyad()
+    # config = example_triad()
+    # config = example_diarization()
+    # config = example_custom_whisper()
+    # config = example_cpu_only()
+    # config = example_full_options()
 
-    # HuggingFace token for pyannote - can be set via:
-    # 1. HF_TOKEN environment variable (or in .env file)
-    # 2. huggingface-cli login (stored in ~/.cache/huggingface/token)
-    # If not set, pyannote will fail with a clear error message.
-    hf_token = os.environ.get("HF_TOKEN")
-
-    # Initialize CarbonTracker if enabled and available
-    tracker = None
-    if ENABLE_CARBON_TRACKING and CARBONTRACKER_AVAILABLE:
-        api_key = os.environ.get("ELECTRICITYMAPS_API_KEY")
-        tracker_kwargs = {
-            "epochs": 1,
-            "monitor_epochs": 1,
-            "log_dir": "logs/carbon",
-            "decimal_precision": 3,
-            "ignore_errors": True,
-            "sim_cpu": "AMD EPYC 7302",  # Name (for logging)
-            "sim_cpu_tdp": int(155 * 2 / 16),  # TDP in Watts - 2/16 cores used
-            "sim_cpu_util": 0.2,  # Estimated utilization (0-1)
-        }
-        if api_key:
-            tracker_kwargs["api_keys"] = {"electricitymaps": api_key}
-        else:
-            print(
-                "Note: ELECTRICITYMAPS_API_KEY not set. "
-                "Carbon tracking will run without CO2 intensity data."
-            )
-        tracker = CarbonTracker(**tracker_kwargs)
+    # -------------------------------------------------------------------------
+    # RUN PIPELINE
+    # -------------------------------------------------------------------------
+    tracker = create_carbon_tracker()
+    if tracker:
         tracker.epoch_start()
-    elif ENABLE_CARBON_TRACKING and not CARBONTRACKER_AVAILABLE:
-        print("CarbonTracker not installed. Run: pip install carbontracker")
 
     start_time = time.time()
-    process_conversation(
-        speakers_audio=speakers_audio,
-        output_dir=output_directory,
-        vad_type=vad_type,
-        auth_token=hf_token,  # Pass HF token for pyannote
-        energy_margin_db=20.0,
-        whisper_device="cpu",
-        interactive_energy_filter=False,
-        batch_size=30.0,  # Total seconds per batch
-        skip_vad_if_exists=False,
-        skip_transcription_if_exists=False,
-        export_elan=True,  # Export ELAN-compatible format by default
-    )
-    end_time = time.time()
 
-    # Stop CarbonTracker and output results
-    if tracker is not None:
+    results = process_conversation(**config)
+
+    elapsed = time.time() - start_time
+
+    if tracker:
         tracker.epoch_end()
         tracker.stop()
 
-    print(f"Processing took {end_time - start_time:.2f} seconds")
+    print(f"\nProcessing completed in {elapsed:.2f} seconds")
+    print(f"Output saved to: {results['output_dir']}")
 
 
 if __name__ == "__main__":

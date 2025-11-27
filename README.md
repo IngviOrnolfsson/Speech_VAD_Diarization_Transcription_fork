@@ -1,14 +1,13 @@
 # Speech VAD, Diarization & Transcription Pipeline
 
-End-to-end processing of conversation recordings with support for both pre-separated and mixed audio. Produces cleaned, transcribed, and labeled segments ready for ELAN or manual inspection.
+End-to-end processing of conversation recordings with support for both pre-separated and mixed audio. Produces cleaned, transcribed, and labeled segments; labels can optionally be exported to the user's annotation software of choice (e.g., ELAN) for manual review.
 
 ![Pipeline Flowchart](docs/figures/Protocol.png)
 *Pipeline architecture: splits at Stage 1 (VAD vs Diarization) based on input type, then converges for unified processing.*
 
 ## Features
 
-- **Multiple VAD methods**: rVAD (energy-based) or Pyannote.audio (neural)
-- **Speaker separation**: SpeechBrain SepFormer for mixed audio
+- **Multiple VAD methods**: rVAD, silero (mult channel) or Pyannote.audio (single chanel)
 - **Diarization**: Pyannote.audio for single-channel recordings
 - **Transcription**: Whisper with GPU acceleration and batching
 - **Smart processing**: Turn merging, entropy-based labeling, context-aware annotation
@@ -17,154 +16,123 @@ End-to-end processing of conversation recordings with support for both pre-separ
 
 ## Installation
 
-### Quick Install with Make
+FFmpeg is required for audio processing. Choose one of the following installation options depending on your environment.
+
+### Option 1: Pure UV (Recommended)
+
+Use this if you have admin access to install system packages.
 
 ```bash
-# RECOMMENDED: Hybrid approach (Conda for FFmpeg + UV for packages)
-# Works on HPC clusters without sudo, fastest Python package installation
-git clone https://github.com/haraldsr/Speech_VAD_Diarization_Transcription.git
-cd Speech_VAD_Diarization_Transcription
+# Install FFmpeg
+sudo apt update && sudo apt install -y ffmpeg  # Ubuntu/Debian
+# brew install ffmpeg                          # macOS
 
-make install-hybrid  # or just: make install
-conda activate wp1
-```
-
-**Alternative methods:**
-
-```bash
-# LOCAL MACHINE (with sudo): Pure UV
-sudo apt install -y ffmpeg  # Ubuntu/Debian
-make install-uv
-source .venv/bin/activate
-
-# ALL FROM CONDA: Slower but fully self-contained
-make install-conda
-conda activate wp1
-```
-
-### Manual Installation
-
-#### Option 1: Hybrid - Conda (FFmpeg) + UV (Packages) ⭐ RECOMMENDED
-
-**Best of both worlds:** Conda for system deps, UV for fast Python packages
-
-```bash
-# Install UV first
+# Install UV
 curl -LsSf https://astral.sh/uv/install.sh | sh
 
-# Create minimal Conda environment with FFmpeg
+# Clone and set up
 git clone https://github.com/haraldsr/Speech_VAD_Diarization_Transcription.git
 cd Speech_VAD_Diarization_Transcription
 
-# Create environment (auto-detects mamba if available)
-conda env create -f environment-minimal.yml -n wp1  # or: mamba env create -f environment-minimal.yml -n wp1
-conda activate wp1
-
-# Install Python packages with UV (fast!)
-uv pip install -r requirements-lock-uv.txt
-pip install -e .
-```
-
-**Advantages:**
-- ✅ No sudo required (FFmpeg from Conda)
-- ✅ Fast package installation (UV is 10-100x faster than pip)
-- ✅ Reproducible (exact versions from lockfile)
-- ✅ Perfect for HPC clusters
-
-#### Option 2: Pure UV (Local Machine with FFmpeg)
-
-**Requirements:** System FFmpeg (requires sudo or admin access)
-
-```bash
-# Install system dependencies first (FFmpeg required for audio processing)
-# Ubuntu/Debian:
-sudo apt update && sudo apt install -y ffmpeg
-
-# macOS:
-brew install ffmpeg
-
-# Then install UV and Python packages
-curl -LsSf https://astral.sh/uv/install.sh | sh
-
-# Clone and setup
-git clone https://github.com/haraldsr/Speech_VAD_Diarization_Transcription.git
-cd Speech_VAD_Diarization_Transcription
-
-# Create environment with Python 3.10+ (UV will download it if needed)
 uv venv --python 3.10
 source .venv/bin/activate  # Windows: .venv\Scripts\activate
-
-# Install dependencies
 uv pip install -r requirements-lock-uv.txt
 pip install -e .
 ```
 
-#### Option 3: Pure Conda/Mamba (Fully Self-Contained)
+### Option 2: Hybrid Conda + UV (No Admin Access)
 
-**Includes everything** - No UV needed, but slower
+Use this on HPC clusters or systems where you cannot install FFmpeg at the system level. Requires Conda/Mamba to be pre-installed.
 
 ```bash
+# Install UV
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Clone and set up
 git clone https://github.com/haraldsr/Speech_VAD_Diarization_Transcription.git
 cd Speech_VAD_Diarization_Transcription
 
-# Create environment
-conda env create -f environment.yml
+# Create Conda environment (provides FFmpeg)
+conda env create -f environment-minimal.yml -n wp1  # or use mamba
 conda activate wp1
 
+# Install Python packages with UV
+uv pip install -r requirements-lock-uv.txt
 pip install -e .
 ```
 
-**Note:** Use `mamba` instead of `conda` for faster installation: `mamba env create -f environment.yml`
+**Note:** Mixing Conda and UV is not ideal, but necessary when system package installation is unavailable.
+
+### Make Shortcuts
+
+If you prefer using Make:
+
+```bash
+make install-uv      # Option 1 (pure UV, requires system FFmpeg)
+make install-hybrid  # Option 2 (Conda + UV)
+make install         # Same as option 2
+make install-conda   # Full Conda install (slower, no UV)
+```
 
 ---
 
 ## Quick Start
 
-### 1. Pre-separated Audio (Two Channels)
+See `conversation_pipeline.py` for complete examples with different configurations.
+
+### Pre-separated Audio (Dyad/Triad)
 
 ```python
 from speech_vad_diarization import process_conversation
 
+# Dyad example (two speakers, separate audio files)
 results = process_conversation(
     speakers_audio={
         "P1": "path/to/speaker1.wav",
-        "P2": "path/to/speaker2.wav"
+        "P2": "path/to/speaker2.wav",
     },
-    output_dir="outputs/my_experiment",
-    vad_type="rvad",  # or "pyannote"
-    whisper_language="da",
-    batch_size=60.0
+    output_dir="outputs/dyad",
+    vad_type="silero",  # or "rvad"
 )
-```
 
-### 2. Single Mixed Audio (Diarization)
-
-```python
+# Triad example (three speakers)
 results = process_conversation(
-    speakers_audio="path/to/mixed_audio.wav",  # Single file
-    output_dir="outputs/diarization",
-    vad_type="pyannote",  # Required for diarization
-    whisper_language="da"
+    speakers_audio={
+        "P1": "path/to/speaker1.wav",
+        "P2": "path/to/speaker2.wav",
+        "P3": "path/to/speaker3.wav",
+    },
+    output_dir="outputs/triad",
+    vad_type="rvad",
 )
 ```
 
-### 3. Speaker Separation + Pipeline
+### Single Mixed Audio (Diarization)
+
+Requires a HuggingFace token with access to pyannote models. Set via:
+- Environment variable: `export HF_TOKEN="your-token"`
+- Or login: `huggingface-cli login`
 
 ```python
-# First separate speakers, then process
-# See speech_separation_chunked.py and run_separation_and_pipeline.py
+# Single file with multiple speakers - uses pyannote diarization
+results = process_conversation(
+    speakers_audio="path/to/mixed_audio.wav",
+    output_dir="outputs/diarized",
+    vad_type="pyannote",  # Required for diarization
+    auth_token=os.environ.get("HF_TOKEN"),  # Or None if logged in via CLI
+)
+```
+
+### Speaker Separation + Pipeline
+
+For mixed audio with overlapping speakers, first separate with SepFormer:
+
+```python
+# See run_separation_and_pipeline.py for complete example
 from speech_separation_chunked import separator, separate_audio_with_smart_chunking
 model = separator.from_hparams(source="speechbrain/sepformer-wsj02mix")
 separated = separate_audio_with_smart_chunking(model, "mixed.wav")
-# Then use process_conversation() with the separated audio paths
-```
-
-### 4. Advanced: Resume from Existing VAD
-
-```python
-# If you already have VAD files, skip VAD and start from transcription
-# See run_pipeline_only.py for complete example
-from run_pipeline_only import run_pipeline_with_existing_vad
+# Then use process_conversation() with separated audio paths
 ```
 
 ---
@@ -173,15 +141,15 @@ from run_pipeline_only import run_pipeline_with_existing_vad
 
 | Parameter | Default | Description |
 |-----------|---------|-------------|
-| `vad_type` | `"rvad"` | VAD method: `"rvad"` or `"pyannote"` |
+| `vad_type` | `"rvad"` | VAD method: `"rvad"`, `"silero"`, or `"pyannote"` |
 | `vad_min_duration` | `0.07` | Minimum segment duration (seconds) |
 | `energy_margin_db` | `10.0` | Energy threshold for filtering |
-| `gap_thresh` | `0.2` | Max gap for merging segments |
-| `whisper_model_name` | `"large-v3"` | Whisper model (or custom like `"CoRal-project/roest-whisper-large-v1"`) |
-| `whisper_language` | `"en"` | Target language code |
+| `gap_thresh` | `0.5` | Max gap for merging segments |
+| `transciption_model_name` | `"openai/whisper-large-v3"` | Whisper model (or custom like `"CoRal-project/roest-whisper-large-v1"`) |
+| `whisper_language` | `"da"` | Target language code |
 | `whisper_device` | `"auto"` | `"auto"`, `"cuda"`, or `"cpu"` |
-| `batch_size` | `60.0` | Batch size in seconds |
-| `export_elan` | `True` | Export ELAN-compatible tab-delimited file |
+| `batch_size` | `30.0` | Batch size in seconds |
+| `export_elan` | `True` | Export tab-delimited file for annotation software |
 
 ---
 
@@ -219,42 +187,25 @@ P2_backchannel	2450	3100	Mm-hmm
 ```
 
 To import in ELAN: **File → Import → Tab-delimited Text...** (skip first line: Yes)
-
 ---
 
-## Speaker Separation (Mixed Audio)
+## Carbon Tracking
 
-For audio with overlapping speakers:
+The pipeline optionally integrates [CarbonTracker](https://github.com/lfwa/carbontracker) for monitoring energy consumption and CO₂ emissions during processing.
+
+To enable carbon tracking in `conversation_pipeline.py`:
 
 ```python
-from speech_separation_chunked import (
-    separator,
-    separate_audio_with_smart_chunking,
-    save_vad_timestamps
-)
-
-# 1. Load SepFormer model
-model = separator.from_hparams(
-    source="speechbrain/sepformer-wsj02mix",
-    savedir='pretrained_models/sepformer-wsj02mix',
-    run_opts={"device": "cuda"}
-)
-
-# 2. Separate speakers
-separated = separate_audio_with_smart_chunking(
-    model=model,
-    audio_path='mixed_audio.wav',
-    chunk_duration_sec=60
-)
-
-# 3. Extract VAD and audio segments
-vad_paths = save_vad_timestamps(separated, output_dir='outputs/vad')
+ENABLE_CARBON_TRACKING = True  # Set in conversation_pipeline.py
 ```
 
-**Parameters:**
-- `chunk_duration_sec`: Reduce to 30 or 20 if OOM errors
-- Smart chunking respects speech boundaries
-- See `speech_separation.ipynb` for interactive workflow
+Optionally set an [Electricity Maps](https://www.electricitymaps.com/) API key for accurate CO₂ intensity data:
+
+```bash
+export ELECTRICITYMAPS_API_KEY="your-api-key"
+```
+
+Logs are saved to `logs/carbon/`. See `conversation_pipeline.py` for configuration options including CPU TDP simulation for systems without direct power measurement.
 
 ---
 
@@ -280,11 +231,25 @@ pip install --force-reinstall torchcodec==0.8.1
 
 **Note:** Conda environments include FFmpeg automatically. UV/pip environments require manual FFmpeg installation.
 
+### FFmpeg Version Mismatch
+
+If you see errors about missing symbols or incompatible FFmpeg libraries:
+
+```bash
+# Check FFmpeg version (requires 6.x or 7.x for torchcodec)
+ffmpeg -version
+
+# Ubuntu 22.04 has FFmpeg 4.x by default - use Conda or upgrade:
+conda install -c conda-forge ffmpeg=7.*
+
+# Or reinstall torchcodec to match your FFmpeg version:
+pip install --force-reinstall torchcodec
+```
+
 ### Out of Memory
 ```python
 # Reduce batch sizes
-batch_size=30.0,
-whisper_transformers_batch_size=50
+batch_size=15.0, # sec
 ```
 
 ### GPU Not Detected
@@ -309,23 +274,30 @@ uv pip install -r requirements-lock-uv.txt --upgrade
 
 ```
 .
-├── Makefile                          # Build automation (install, lint, clean)
-├── environment-minimal.yml           # Minimal Conda env (Python + FFmpeg only)
-├── environment.yml                   # Full Conda environment
-├── requirements.txt                  # Flexible dependencies (development)
-├── requirements-lock-uv.txt          # Exact dependencies (reproducibility)
-├── conversation_pipeline.py          # Example CLI usage
-├── run_pipeline_only.py              # Advanced: Resume from existing VAD files
-├── run_separation_and_pipeline.py    # Full workflow with separation
-├── speech_separation_chunked.py      # Speaker separation utilities
-└── src/                              # Package source (installed as speech_vad_diarization)
-    ├── __init__.py                   # Exports process_conversation, load_whisper_model, transcribe_segments
-    ├── conversation.py               # Main API: process_conversation()
-    ├── vad.py                        # VAD wrappers (rVAD, Pyannote)
-    ├── postprocess_vad.py            # Energy filtering, segment cleaning
-    ├── merge_turns.py                # Turn merging logic
-    ├── transcription.py              # Whisper transcription
-    └── labeling.py                   # Entropy-based labeling
+├── Makefile                      # Build automation (install, lint, clean)
+├── README.md
+├── LICENSE
+├── pyproject.toml                # Package metadata and tool configuration
+├── setup.py                      # Package installation
+├── environment-minimal.yml       # Minimal Conda env (Python + FFmpeg only)
+├── environment.yml               # Full Conda environment
+├── requirements.txt              # Flexible dependencies (development)
+├── requirements-lock-uv.txt      # Exact dependencies (reproducibility)
+├── .env.example                  # Example environment variables (HF_TOKEN, etc.)
+├── .flake8                       # Linting configuration
+├── conversation_pipeline.py      # Example usage with dyad/triad/diarization configs
+├── docs/
+│   └── figures/                  # Pipeline diagrams
+├── scripts/
+│   └── generate_uv_lock.sh       # Script to regenerate lockfile
+└── src/                          # Package source (installed as speech_vad_diarization)
+    ├── __init__.py               # Exports process_conversation, load_whisper_model, etc.
+    ├── conversation.py           # Main API: process_conversation()
+    ├── vad.py                    # VAD wrappers (rVAD, Silero, Pyannote)
+    ├── postprocess_vad.py        # Energy filtering, segment cleaning
+    ├── merge_turns.py            # Turn merging logic
+    ├── transcription.py          # Whisper transcription
+    └── labeling.py               # Entropy-based labeling
 ```
 
 ---
@@ -343,20 +315,6 @@ make lint          # Run linting (flake8, mypy, isort, black)
 make format        # Format code (isort + black)
 make clean         # Remove build artifacts
 ```
-
-### Git Hooks (Automatic Linting)
-
-The repository includes a pre-commit hook that automatically runs `make format` and `make lint` before each commit:
-
-```bash
-# Install git hooks (done automatically, but can be re-run)
-./scripts/install_hooks.sh
-```
-
-When you commit in VS Code (or via command line):
-1. Code is automatically formatted
-2. Linting checks run
-3. Commit is blocked if linting fails
 
 ### View Installed Packages
 ```bash
@@ -395,6 +353,7 @@ uv pip install -r requirements-lock-uv.txt --upgrade
 - **Whisper**: https://github.com/openai/whisper
 - **rVAD**: https://github.com/zhenghuatan/rVADfast
 - **UV**: https://github.com/astral-sh/uv
+- **CarbonTracker**: https://github.com/lfwa/carbontracker
 
 ---
 

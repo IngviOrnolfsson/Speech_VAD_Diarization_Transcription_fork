@@ -87,8 +87,7 @@ extend-exclude = '''
   )/
   | ^speech_separation\.ipynb$
   | ^speech_separation_chunked\.py$
-  | ^run_separation_and_pipeline\.py$
-  | ^run_pipeline_only\.py$
+  | ^cp\.py$
   | \.py[co]$
   | \.so$
   | ^\.Python$
@@ -141,8 +140,7 @@ skip_glob = [
     "tmp_scripts/**",
     "speech_separation.ipynb",
     "speech_separation_chunked.py",
-    "run_separation_and_pipeline.py",
-    "run_pipeline_only.py",
+    "cp.py",
     ".DS_Store",
     "Thumbs.db",
     "*.py[cod]",
@@ -202,8 +200,7 @@ exclude = '''
   | tmp_scripts/
   | speech_separation\.ipynb$
   | speech_separation_chunked\.py$
-  | run_separation_and_pipeline\.py$
-  | run_pipeline_only\.py$
+  | cp\.py$
   | \.DS_Store$
   | Thumbs\.db$
   | \.py[co]$
