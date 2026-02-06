@@ -108,7 +108,7 @@ def process_conversation(
         speakers_audio: Mapping of speaker names to audio file paths,
             or single path for diarization.
         output_dir: Directory to save output files.
-        vad_type: Type of VAD to use ('silero', 'rvad', 'whisper', 'pyannote').
+        vad_type: Type of VAD to use ('silero', 'rvad', 'whisper', 'pyannote', 'nemo').
         auth_token: HuggingFace auth token (required for pyannote).
         vad_min_duration: Minimum duration (in seconds) for VAD segments.
         energy_margin_db: Energy margin (in dB) for filtering low-energy segments.
@@ -151,9 +151,10 @@ def process_conversation(
 
     if isinstance(speakers_audio, str):
         # Single file input - Diarization Mode
-        if vad_type != "pyannote":
+        if vad_type not in {"pyannote", "nemo"}:
             raise ValueError(
-                "Single file input requires vad_type='pyannote' for diarization."
+                "Single file input requires vad_type='pyannote' or "
+                "'nemo' for diarization."
             )
 
         audio_path = speakers_audio
@@ -168,7 +169,7 @@ def process_conversation(
                 d
                 for d in os.listdir(output_dir)
                 if os.path.isdir(os.path.join(output_dir, d))
-                and re.match(r"^SPEAKER_\d+$", d)
+                and re.match(r"^(SPEAKER_\d+|P\d+)$", d)
             ]
             vad_paths = {}
             speakers = []
@@ -248,7 +249,7 @@ def process_conversation(
 
     # Common pipeline continues...
     energy_margins = _normalise_margins(energy_margin_db, speakers)
-
+    exit(0)
     print("\n2. Loading and filtering VAD segments...")
     filtered_segments: List[pd.DataFrame] = []
     for idx, speaker in enumerate(speakers):
@@ -302,7 +303,13 @@ def process_conversation(
     for speaker in speakers:
         segments_by_speaker[speaker] = turns_df[turns_df["Speaker"] == speaker][
             ["Start_Sec", "End_Sec", "Duration_Sec", "Speaker", "Turn_Type"]
-        ].rename(columns={"Start_Sec": "start_sec", "End_Sec": "end_sec"})
+        ].rename(
+            columns={
+                "Start_Sec": "start_sec",
+                "End_Sec": "end_sec",
+                "Turn_Type": "turn_type",
+            }
+        )
 
     raw_transcriptions_path = os.path.join(output_dir, "raw_transcriptions.txt")
     classified_path = os.path.join(output_dir, "classified_transcriptions.txt")

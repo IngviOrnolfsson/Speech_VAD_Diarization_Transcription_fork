@@ -87,10 +87,11 @@ def example_diarization() -> dict:
     Requires pyannote and a HuggingFace token with access to pyannote models.
     """
     return {
-        "speakers_audio": "path/to/mixed_audio.wav",
+        "speakers_audio": "examples/coral/conv_0cbf895a2078529eb4a9d8b212e710c9.wav",
         "output_dir": "outputs/diarized",
         "vad_type": "pyannote",
         "auth_token": os.environ.get("HF_TOKEN"),
+        "skip_vad_if_exists": True,
     }
 
 
@@ -163,7 +164,7 @@ def example_full_options() -> dict:
         "merge_max_dur": 60.0,  # Maximum merged turn duration
         "bridge_short_opponent": True,  # Bridge over short opponent utterances
         # Transcription
-        "transciption_model_name": "openai/whisper-large-v3",
+        "transcription_model_name": "openai/whisper-large-v3",
         "whisper_device": "auto",  # 'auto', 'cuda', or 'cpu'
         "whisper_language": "da",
         "whisper_transformers_batch_size": 100,
@@ -229,9 +230,9 @@ def main() -> None:
     # -------------------------------------------------------------------------
     # SELECT YOUR EXAMPLE HERE
     # -------------------------------------------------------------------------
-    config = example_dyad()
+    # config = example_dyad()
     # config = example_triad()
-    # config = example_diarization()
+    config = example_diarization()
     # config = example_custom_whisper()
     # config = example_cpu_only()
     # config = example_full_options()
