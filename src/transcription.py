@@ -28,7 +28,7 @@ class TransformersASRModel:
 
 
 def load_whisper_model(
-    transciption_model_name: str = "openai/whisper-large-v3",
+    transcription_model_name: str = "openai/whisper-large-v3",
     device: str = "cpu",
     language: Optional[str] = "da",
     cache_dir: Optional[str] = None,
@@ -38,7 +38,7 @@ def load_whisper_model(
 
     Parameters
     ----------
-    transciption_model_name
+    transcription_model_name
         Model identifier (e.g., 'openai/whisper-large-v3')
     device
         'cpu' or 'cuda' for GPU inference
@@ -68,14 +68,14 @@ def load_whisper_model(
 
     # Load model and processor
     model = AutoModelForSpeechSeq2Seq.from_pretrained(
-        transciption_model_name,
+        transcription_model_name,
         dtype=torch_dtype,
         cache_dir=cache_dir,
     )
     model.to(torch_device)
 
     processor = AutoProcessor.from_pretrained(
-        transciption_model_name, cache_dir=cache_dir
+        transcription_model_name, cache_dir=cache_dir
     )
 
     # Create pipeline

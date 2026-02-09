@@ -54,11 +54,11 @@ def example_dyad() -> dict:
     """
     return {
         "speakers_audio": {
-            "P1": "path/to/speaker1.wav",
-            "P2": "path/to/speaker2.wav",
+            "P1": "demo\\audio\\F1F2_quiet_food_1m_01_ch1.wav",
+            "P2": "demo\\audio\\F1F2_quiet_food_1m_01_ch2.wav",
         },
         "output_dir": "outputs/dyad",
-        "vad_type": "silero",
+        "vad_type": "rvad",
     }
 
 
@@ -230,9 +230,9 @@ def main() -> None:
     # -------------------------------------------------------------------------
     # SELECT YOUR EXAMPLE HERE
     # -------------------------------------------------------------------------
-    # config = example_dyad()
+    config = example_dyad()
     # config = example_triad()
-    config = example_diarization()
+    # config = example_diarization()
     # config = example_custom_whisper()
     # config = example_cpu_only()
     # config = example_full_options()

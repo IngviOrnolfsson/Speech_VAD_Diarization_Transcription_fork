@@ -88,17 +88,18 @@ def process_conversation(
     long_merge_enabled: bool = True,
     merge_max_dur: float = 60.0,
     bridge_short_opponent: bool = True,
-    transciption_model_name: str = "openai/whisper-large-v3",
+    transcription_model_name: str = "openai/whisper-large-v3",
     whisper_device: str = "auto",
     whisper_language: str = "da",
     whisper_transformers_batch_size: int = 100,
-    entropy_threshold: float = 1.5,
+    entropy_threshold: float = -1, # <0: sets everything to turns, default: 1.5
     max_backchannel_dur: float = 1.0,
     max_gap_sec: float = 3.0,
     batch_size: float | None = 30.0,
     interactive_energy_filter: bool = False,
     skip_vad_if_exists: bool = True,
     skip_transcription_if_exists: bool = True,
+    min_duration_samples: float = float('inf'), # float('inf'): skips transcription, default: 1600
     export_elan: bool = True,
 ) -> Dict[str, object]:
     """
@@ -122,7 +123,7 @@ def process_conversation(
         bridge_short_opponent: Whether to bridge over short opponent utterances.
         keep_bridged_segments: If True, preserve segments bridged over as separate
             entries. If False, only keep the merged turns.
-        transciption_model_name: Name of the Transciption model to use.
+        transcription_model_name: Name of the Transcription model to use.
         whisper_device: Device to run Whisper on ('auto', 'cpu', 'cuda').
         whisper_language: Language code for transcription.
         whisper_transformers_batch_size: Batch size for Whisper transcription.
@@ -136,6 +137,7 @@ def process_conversation(
             output files are found.
         skip_transcription_if_exists: If True, skip transcription and
             classification if classified_transcriptions.txt exists.
+        min_duration_samples: Minimum duration (in seconds) for segments to be transcribed.
         export_elan: If True, export final labels to ELAN-compatible
             tab-delimited format (default: True).
 
@@ -249,7 +251,7 @@ def process_conversation(
 
     # Common pipeline continues...
     energy_margins = _normalise_margins(energy_margin_db, speakers)
-    exit(0)
+    # exit(0)
     print("\n2. Loading and filtering VAD segments...")
     filtered_segments: List[pd.DataFrame] = []
     for idx, speaker in enumerate(speakers):
@@ -301,15 +303,9 @@ def process_conversation(
     print("\n4. Preparing segments for transcription...")
     segments_by_speaker: Dict[str, pd.DataFrame] = {}
     for speaker in speakers:
-        segments_by_speaker[speaker] = turns_df[turns_df["Speaker"] == speaker][
-            ["Start_Sec", "End_Sec", "Duration_Sec", "Speaker", "Turn_Type"]
-        ].rename(
-            columns={
-                "Start_Sec": "start_sec",
-                "End_Sec": "end_sec",
-                "Turn_Type": "turn_type",
-            }
-        )
+        segments_by_speaker[speaker] = turns_df[turns_df["speaker"] == speaker][
+            ["start_sec", "end_sec", "duration_sec", "speaker", "turn_type"]
+        ]
 
     raw_transcriptions_path = os.path.join(output_dir, "raw_transcriptions.txt")
     classified_path = os.path.join(output_dir, "classified_transcriptions.txt")
@@ -318,10 +314,11 @@ def process_conversation(
     if skip_transcription_if_exists and os.path.exists(raw_transcriptions_path):
         print("Raw transcriptions already exist, skipping Whisper transcription.")
         df_all = pd.read_csv(raw_transcriptions_path, sep="\t")
+        
     else:
         print("\n5. Loading Whisper model and transcribing...")
         model = load_whisper_model(
-            transciption_model_name=transciption_model_name,
+            transcription_model_name=transcription_model_name,
             device=whisper_device,
             language=whisper_language,
             transformers_batch_size=whisper_transformers_batch_size,
@@ -341,6 +338,7 @@ def process_conversation(
                 cache=True,
                 batch_size=batch_size,
                 compress=True,
+                min_duration_samples=min_duration_samples
             )
             all_results.extend(results)
 

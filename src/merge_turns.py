@@ -194,11 +194,11 @@ def create_turns_df_windowed(
         # Add the completed turn to the list
         turns.append(
             {
-                "Speaker": speaker,
-                "Start_Sec": current["start"],
-                "End_Sec": current["end"],
-                "Duration_Sec": current["duration"],
-                "Turn_Type": "T",
+                "speaker": speaker,
+                "start_sec": current["start"],
+                "end_sec": current["end"],
+                "duration_sec": current["duration"],
+                "turn_type": "T",
             }
         )
 
@@ -206,4 +206,4 @@ def create_turns_df_windowed(
         consumed_indices.update(merged_indices)
         i = j
 
-    return pd.DataFrame(turns).sort_values(by="Start_Sec").reset_index(drop=True)
+    return pd.DataFrame(turns).sort_values(by="start_sec").reset_index(drop=True)
