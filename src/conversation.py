@@ -99,7 +99,7 @@ def process_conversation(
     interactive_energy_filter: bool = False,
     skip_vad_if_exists: bool = True,
     skip_transcription_if_exists: bool = True,
-    min_duration_samples: float = 1600, # float('inf'): skips transcription, default: 1600
+    min_duration_samples: float = 1600, # float('inf'): skips transcription
     export_elan: bool = True,
 ) -> Dict[str, object]:
     """
@@ -137,7 +137,7 @@ def process_conversation(
             output files are found.
         skip_transcription_if_exists: If True, skip transcription and
             classification if classified_transcriptions.txt exists.
-        min_duration_samples: Minimum duration (in seconds) for segments to be transcribed.
+        min_duration_samples: Minimum duration (in samples) for segments to be transcribed.
         export_elan: If True, export final labels to ELAN-compatible
             tab-delimited format (default: True).
 
