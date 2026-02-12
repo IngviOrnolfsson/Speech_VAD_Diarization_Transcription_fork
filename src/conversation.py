@@ -79,7 +79,7 @@ def process_conversation(
     vad_type: str = "rvad",
     auth_token: str | None = None,
     vad_min_duration: float = 0.07,
-    energy_margin_db: EnergyMargin = 60.0,
+    energy_margin_db: EnergyMargin = 10.0,
     gap_thresh: float = 0.5,
     short_utt_thresh: float = 1.0,
     window_sec: float = 3.0,
