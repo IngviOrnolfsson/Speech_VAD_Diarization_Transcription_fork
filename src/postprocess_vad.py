@@ -89,14 +89,10 @@ def filter_low_energy_segments(
         )
         cut_count = len(segment_stats) - kept_count
         percentage_cut = (cut_count / len(segment_stats)) * 100
-        print(
-            f"Energy filtering: Max {reference_db:.1f} dB, \
-                threshold {threshold_db:.1f} dB (margin {energy_margin_db:.1f} dB)"
-        )
-        print(
-            f"Segments: {len(segment_stats)} total, {kept_count} kept, \
-                {cut_count} cut ({percentage_cut:.1f}%)"
-        )
+        print(f"Energy filtering: Max {reference_db:.1f} dB, \
+                threshold {threshold_db:.1f} dB (margin {energy_margin_db:.1f} dB)")
+        print(f"Segments: {len(segment_stats)} total, {kept_count} kept, \
+                {cut_count} cut ({percentage_cut:.1f}%)")
 
     # Interactive threshold adjustment
     if interactive_threshold:
@@ -151,10 +147,8 @@ def _interactive_energy_filtering(
 
         # Print current status
         print(f"\nMax energy: {max_energy_db:.1f} dB")
-        print(
-            f"Current threshold: {current_threshold:.1f} dB \
-                (margin: {current_margin:.1f} dB)"
-        )
+        print(f"Current threshold: {current_threshold:.1f} dB \
+                (margin: {current_margin:.1f} dB)")
         print(f"Segments kept: {kept_count}, cut: {cut_count}")
 
         # Find examples for boundary segments
@@ -184,18 +178,12 @@ def _interactive_energy_filtering(
             sf.write(quietest_kept_path, audio[start_sample:end_sample], sr)
 
             print(f"\nExample clips saved in: {interim_dir}")
-            print(
-                f"- Loudest cut segment: {loudest_cut_path} \
-                    ({loudest_cut['energy_db']:.1f} dB)"
-            )
-            print(
-                f"- Quietest kept segment: {quietest_kept_path} \
-                    ({quietest_kept['energy_db']:.1f} dB)"
-            )
-            print(
-                f"Energy difference: \
-                    {quietest_kept['energy_db'] - loudest_cut['energy_db']:.1f} dB"
-            )
+            print(f"- Loudest cut segment: {loudest_cut_path} \
+                    ({loudest_cut['energy_db']:.1f} dB)")
+            print(f"- Quietest kept segment: {quietest_kept_path} \
+                    ({quietest_kept['energy_db']:.1f} dB)")
+            print(f"Energy difference: \
+                    {quietest_kept['energy_db'] - loudest_cut['energy_db']:.1f} dB")
 
         # Ask user for new threshold
         while True:

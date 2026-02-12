@@ -91,7 +91,7 @@ class SpeechActivityDetector:
             self.model, utils = torch.hub.load(
                 repo_or_dir="snakers4/silero-vad", model="silero_vad", force_reload=True
             )
-            (self.get_speech_timestamps, _, self.read_audio, *_) = utils
+            self.get_speech_timestamps, _, self.read_audio, *_ = utils
         elif vad_type == "whisper":
             from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline
 
@@ -199,14 +199,12 @@ class SpeechActivityDetector:
 
                 # Extract timing information from RTTM fields
                 start_time = float(parts[3])  # Field 4: start time in seconds
-                duration = float(parts[4])    # Field 5: duration in seconds
+                duration = float(parts[4])  # Field 5: duration in seconds
                 end_time = start_time + duration  # Calculate end time
 
                 # Extract and normalize speaker ID from RTTM (field 8)
                 # e.g., "SPEAKER_0" -> "P1", "SPEAKER_1" -> "P2"
-                speaker_id = SpeechActivityDetector._normalize_speaker_label(
-                    parts[7]
-                )
+                speaker_id = SpeechActivityDetector._normalize_speaker_label(parts[7])
 
                 # Add this interval to the speaker's list of intervals
                 # setdefault creates an empty list if this speaker doesn't exist yet
@@ -248,9 +246,7 @@ class SpeechActivityDetector:
             os.makedirs(speaker_dir, exist_ok=True)
 
             # Build output file path (e.g., "outputs/P1/conv_123_P1_vad.txt")
-            out_path = os.path.join(
-                speaker_dir, f"{basename}_{speaker}_vad.txt"
-            )
+            out_path = os.path.join(speaker_dir, f"{basename}_{speaker}_vad.txt")
 
             # Write VAD intervals to text file
             with open(out_path, "w") as f:
@@ -460,9 +456,7 @@ class SpeechActivityDetector:
             nemo_work_dir = os.path.join(out_dir, "nemo_work")
             os.makedirs(nemo_work_dir, exist_ok=True)
 
-            manifest_path = os.path.join(
-                nemo_work_dir, "input_manifest.json"
-            )
+            manifest_path = os.path.join(nemo_work_dir, "input_manifest.json")
             meta = {
                 "audio_filepath": wav_path,  # Path to input audio file
                 "offset": 0,  # Start time in seconds (0 = beginning of file)
@@ -485,9 +479,6 @@ class SpeechActivityDetector:
             diarizer = ClusteringDiarizer(cfg=cfg)
             diarizer.diarize()
 
-            # Extract diarization results directly from diarizer object
-            output_paths: Dict[str, str] = {}
-
             try:
                 # Read RTTM file from NeMo work directory
                 rttm_path = os.path.join(
@@ -505,7 +496,7 @@ class SpeechActivityDetector:
                     )
             finally:
                 # Clean up NeMo working directory
-                def remove_tree(path):
+                def remove_tree(path: str) -> None:
                     """Recursively remove directory tree using only os module."""
                     if os.path.isdir(path):
                         for item in os.listdir(path):
@@ -519,9 +510,7 @@ class SpeechActivityDetector:
                     remove_tree(nemo_work_dir)
                     print("✓ Cleaned up NeMo working files")
                 except Exception as e:
-                    print(
-                        f"Warning: Could not clean up NeMo working directory: {e}"
-                    )
+                    print(f"Warning: Could not clean up NeMo working directory: {e}")
 
             return output_paths
 

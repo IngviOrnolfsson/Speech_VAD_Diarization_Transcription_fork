@@ -4,6 +4,12 @@ speechbrain>=1.0.0
 transformers>=4.48.0
 tokenizers>=0.21.0
 
+# NeMo ASR (installed from GitHub main branch)
+nemo_toolkit[asr] @ git+https://github.com/NVIDIA/NeMo.git@main
+
+# Text processing utilities
+text-unidecode>=1.3
+
 # Audio I/O and Processing
 soundfile>=0.12.0
 torchaudio==2.8.0  # Must match torch version for pyannote.audio 4.0.1
@@ -29,7 +35,7 @@ pandas>=2.2.0
 # Machine Learning Utilities
 scikit-learn>=1.0.0
 pytorch-metric-learning>=2.9.0
-lightning>=2.5.0
+lightning>=2.2.1,<=2.4.0  # Constrained by nemo-toolkit requirements
 
 # Data Processing & Configuration
 datasets>=4.0.0

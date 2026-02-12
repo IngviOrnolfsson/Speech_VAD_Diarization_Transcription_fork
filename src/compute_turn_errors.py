@@ -7,7 +7,7 @@ Based on MATLAB implementation compute_turn_errors.m.
 from __future__ import annotations
 
 import warnings
-from typing import Tuple
+from typing import Tuple, cast
 
 import numpy as np
 import pandas as pd
@@ -29,8 +29,8 @@ def compute_overlap_ratio(
         Overlap ratio as overlapping duration / ground truth duration.
     """
     # Ensure segments are sorted [start, end]
-    s1 = tuple(sorted(s1))
-    s2 = tuple(sorted(s2))
+    s1 = cast(Tuple[float, float], tuple(sorted(s1)))
+    s2 = cast(Tuple[float, float], tuple(sorted(s2)))
 
     # Compute overlap ratio as overlapping duration / true duration
     overlapping_duration = min(s1[1], s2[1]) - max(s1[0], s2[0])
@@ -187,7 +187,9 @@ def compute_turn_errors(
         detected_list.append(is_detected)
 
         if is_detected:
-            duration_delta_list.append(float(np.nansum(duration_delta_matrix[:, i_ref])))
+            duration_delta_list.append(
+                float(np.nansum(duration_delta_matrix[:, i_ref]))
+            )
             start_delta_list.append(float(np.nansum(start_delta_matrix[:, i_ref])))
             end_delta_list.append(float(np.nansum(end_delta_matrix[:, i_ref])))
         else:
@@ -214,7 +216,8 @@ def compute_turn_errors(
                     "detected": np.nan,
                     "duration_delta": np.nan,
                     "start_delta": np.nan,
-                    "end_delta": np.nan}
+                    "end_delta": np.nan,
+                }
             )
 
     if false_positives:
@@ -222,6 +225,7 @@ def compute_turn_errors(
         df_out = pd.concat([df_out, df_fp], ignore_index=True)
 
     return df_out
+
 
 def tabulate_floor_transfers(
     df_turns: pd.DataFrame,
@@ -289,17 +293,16 @@ def tabulate_floor_transfers(
     n_fto = len(df_fto)
     expected_fto = n_turns - 1
     if n_fto != expected_fto:
-        raise ValueError(
-            f"Expected {expected_fto} floor transfers, but got {n_fto}."
-        )
+        raise ValueError(f"Expected {expected_fto} floor transfers, but got {n_fto}.")
 
     return df_fto
+
 
 def compute_all_errors(
     df_ref: pd.DataFrame,
     df_est: pd.DataFrame,
     min_overlap_ratio: float,
-) -> Tuple[pd.DataFrame, pd.DataFrame]:
+) -> pd.DataFrame:
     """
     Compute turn errors for both turns and floor transfers.
 
@@ -309,9 +312,7 @@ def compute_all_errors(
         min_overlap_ratio: Minimum overlap ratio for matching turns.
 
     Returns:
-        Tuple of (turn_errors_df, fto_errors_df) where:
-            - turn_errors_df: DataFrame with turn errors.
-            - fto_errors_df: DataFrame with floor transfer errors.
+        DataFrame with concatenated turn and floor transfer errors.
     """
     turn_errors_df = compute_turn_errors(df_ref, df_est, min_overlap_ratio)
 
@@ -324,12 +325,16 @@ def compute_all_errors(
     return err_df
 
 
-
 if __name__ == "__main__":
     # Example usage
-    df_ref = pd.read_csv("demo\\annotations\\F1F2_quiet_food_1m_01_labels_manual_rinor.txt", sep="\t",header=None, names=["speaker", "foo", "start_sec", "end_sec", "duration_sec", "turn_type"])
+    df_ref = pd.read_csv(
+        "demo\\annotations\\F1F2_quiet_food_1m_01_labels_manual_rinor.txt",
+        sep="\t",
+        header=None,
+        names=["speaker", "foo", "start_sec", "end_sec", "duration_sec", "turn_type"],
+    )
 
     df_est = pd.read_csv("outputs\\dyad\\merged_turns.txt", sep="\t")
-    
+
     err_df = compute_all_errors(df_ref, df_est, min_overlap_ratio=0.5)
     print(err_df)

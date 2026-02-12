@@ -1,4 +1,4 @@
-"""Setup configuration for the speech_vad_diarization package."""
+"""Setup configuration for the speech_vad_diarization_transcription package."""
 
 from pathlib import Path
 
@@ -9,7 +9,7 @@ README = (HERE / "README.md").read_text(encoding="utf-8")
 
 
 setup(
-    name="speech_vad_diarization",
+    name="speech_vad_diarization_transcription",
     version="1.0.1",
     description="Speech VAD, diarization and transcription pipeline",
     long_description=README,
@@ -17,8 +17,8 @@ setup(
     author="Harald Skat-Rørdam, Hanlu He",
     author_email="harsk@dtu.dk",
     license="Proprietary",
-    packages=["speech_vad_diarization"],
-    package_dir={"speech_vad_diarization": "src"},
+    packages=["speech_vad_diarization_transcription"],
+    package_dir={"speech_vad_diarization_transcription": "src"},
     python_requires=">=3.10",
     # Dependencies managed via requirements.txt and requirements-lock-uv.txt
 )

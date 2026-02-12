@@ -92,14 +92,14 @@ def process_conversation(
     whisper_device: str = "auto",
     whisper_language: str = "da",
     whisper_transformers_batch_size: int = 100,
-    entropy_threshold: float = -1, # <0: sets everything to turns, default: 1.5
+    entropy_threshold: float = 1.5,
     max_backchannel_dur: float = 1.0,
     max_gap_sec: float = 3.0,
     batch_size: float | None = 30.0,
     interactive_energy_filter: bool = False,
     skip_vad_if_exists: bool = True,
     skip_transcription_if_exists: bool = True,
-    min_duration_samples: float = float('inf'), # float('inf'): skips transcription, default: 1600
+    min_duration_samples: float = 1600,  # float('inf'): skips transcription
     export_elan: bool = True,
 ) -> Dict[str, object]:
     """
@@ -137,7 +137,8 @@ def process_conversation(
             output files are found.
         skip_transcription_if_exists: If True, skip transcription and
             classification if classified_transcriptions.txt exists.
-        min_duration_samples: Minimum duration (in seconds) for segments to be transcribed.
+        min_duration_samples: Minimum duration (in samples) for segments
+            to be transcribed.
         export_elan: If True, export final labels to ELAN-compatible
             tab-delimited format (default: True).
 
@@ -314,7 +315,7 @@ def process_conversation(
     if skip_transcription_if_exists and os.path.exists(raw_transcriptions_path):
         print("Raw transcriptions already exist, skipping Whisper transcription.")
         df_all = pd.read_csv(raw_transcriptions_path, sep="\t")
-        
+
     else:
         print("\n5. Loading Whisper model and transcribing...")
         model = load_whisper_model(
@@ -338,7 +339,7 @@ def process_conversation(
                 cache=True,
                 batch_size=batch_size,
                 compress=True,
-                min_duration_samples=min_duration_samples
+                min_duration_samples=int(min_duration_samples),
             )
             all_results.extend(results)
 

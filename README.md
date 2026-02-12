@@ -53,8 +53,8 @@ git clone https://github.com/haraldsr/Speech_VAD_Diarization_Transcription.git
 cd Speech_VAD_Diarization_Transcription
 
 # Create Conda environment (provides FFmpeg)
-conda env create -f environment-minimal.yml -n wp1  # or use mamba
-conda activate wp1
+conda env create -f environment-minimal.yml -n vdt  # or use mamba
+conda activate vdt
 
 # Install Python packages with UV
 uv pip install -r requirements-lock-uv.txt
@@ -65,14 +65,29 @@ pip install -e .
 
 ### Make Shortcuts
 
-If you prefer using Make:
+**For users (recommended):**
 
 ```bash
-make install-uv      # Option 1 (pure UV, requires system FFmpeg)
-make install-hybrid  # Option 2 (Conda + UV)
-make install         # Same as option 2
+make install         # Auto-detects GPU/CPU and installs from lockfile
+make install-dev     # Install from requirements.txt (for development/testing)
 make install-conda   # Full Conda install (slower, no UV)
 ```
+
+The `make install` auto-detects GPU using `nvidia-smi`:
+- **GPU detected** → uses `requirements-lock-uv-gpu.txt`
+- **No GPU** → uses `requirements-lock-uv-cpu.txt`
+
+**For maintainers (creating lockfiles):**
+
+```bash
+# In GPU environment (auto-creates requirements-lock-uv-gpu.txt):
+make gen-lock
+
+# In CPU environment (auto-creates requirements-lock-uv-cpu.txt):
+make gen-lock
+```
+
+The `gen-lock` command automatically detects GPU and names the file accordingly.
 
 ---
 
@@ -83,7 +98,7 @@ See `conversation_pipeline.py` for complete examples with different configuratio
 ### Pre-separated Audio (Dyad/Triad)
 
 ```python
-from speech_vad_diarization import process_conversation
+from speech_vad_diarization_transcription import process_conversation
 
 # Dyad example (two speakers, separate audio files)
 results = process_conversation(
@@ -290,7 +305,7 @@ uv pip install -r requirements-lock-uv.txt --upgrade
 │   └── figures/                  # Pipeline diagrams
 ├── scripts/
 │   └── generate_uv_lock.sh       # Script to regenerate lockfile
-└── src/                          # Package source (installed as speech_vad_diarization)
+└── src/                          # Package source (installed as speech_vad_diarization_transcription)
     ├── __init__.py               # Exports process_conversation, load_whisper_model, etc.
     ├── conversation.py           # Main API: process_conversation()
     ├── vad.py                    # VAD wrappers (rVAD, Silero, Pyannote)
@@ -325,7 +340,7 @@ conda list  # If using conda
 ### Update Environment to Match Working Setup
 ```bash
 # Using UV (recommended)
-conda activate wp1
+conda activate vdt
 pip list --format=freeze | sed 's/grpcio==1.74.1/grpcio>=1.74.0/; s/matplotlib==3.10.8/matplotlib>=3.10.0/' > requirements-lock-uv.txt
 
 # Then apply to another environment

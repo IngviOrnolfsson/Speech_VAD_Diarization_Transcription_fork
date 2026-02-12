@@ -22,7 +22,7 @@ try:
 except ImportError:
     pass  # python-dotenv not installed, rely on system environment variables
 
-from speech_vad_diarization import process_conversation
+from speech_vad_diarization_transcription import process_conversation
 
 # Optional: CarbonTracker for energy monitoring
 try:
