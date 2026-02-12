@@ -77,6 +77,7 @@ def process_conversation(
     speakers_audio: Mapping[str, str] | str,
     output_dir: str = "outputs",
     vad_type: str = "rvad",
+    rvad_threshold: float = 0.4,
     auth_token: str | None = None,
     vad_min_duration: float = 0.07,
     energy_margin_db: EnergyMargin = 10.0,
@@ -97,9 +98,9 @@ def process_conversation(
     max_gap_sec: float = 3.0,
     batch_size: float | None = 30.0,
     interactive_energy_filter: bool = False,
-    skip_vad_if_exists: bool = True,
-    skip_transcription_if_exists: bool = True,
-    min_duration_samples: float = 1600, # float('inf'): skips transcription, default: 1600
+    skip_vad_if_exists: bool = False,
+    skip_transcription_if_exists: bool = False,
+    min_duration_samples: float = 1600,  # float('inf'): skips transcription
     export_elan: bool = True,
 ) -> Dict[str, object]:
     """
@@ -242,7 +243,9 @@ def process_conversation(
             print("All VAD files already exist, skipping VAD step.")
             vad_paths = expected_vad_paths
         else:
-            vad = SpeechActivityDetector(vad_type=vad_type, auth_token=auth_token)
+            vad = SpeechActivityDetector(
+                vad_type=vad_type, auth_token=auth_token, rvad_threshold=rvad_threshold
+            )
             print("\n1. Running Voice Activity Detection...")
             for speaker, path in speakers_audio.items():
                 vad_path = expected_vad_paths[speaker]

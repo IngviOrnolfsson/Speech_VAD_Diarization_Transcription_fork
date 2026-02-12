@@ -302,7 +302,7 @@ def compute_all_errors(
     df_ref: pd.DataFrame,
     df_est: pd.DataFrame,
     min_overlap_ratio: float,
-) -> Tuple[dict,pd.DataFrame]:
+) -> Tuple[dict, pd.DataFrame]:
     """
     Compute turn errors for both turns and floor transfers.
 
@@ -312,7 +312,8 @@ def compute_all_errors(
         min_overlap_ratio: Minimum overlap ratio for matching turns.
 
     Returns:
-        DataFrame with concatenated turn and floor transfer errors.
+        Tuple of (metrics_dict, errors_dataframe) where metrics_dict contains
+        precision, recall, and mean timing deltas for each turn type.
     """
     turn_errors_df = compute_turn_errors(df_ref, df_est, min_overlap_ratio)
 
@@ -322,40 +323,96 @@ def compute_all_errors(
 
     err_df = pd.concat([turn_errors_df, fto_errors_df], ignore_index=True)
 
-    return err_df
+    # Compute summary metrics for each turn type
+    err: dict = {}
+    for turn_type in err_df["turn_type"].unique():
+        type_df = err_df[err_df["turn_type"] == turn_type]
 
+        # True positives: detected=True
+        tp = type_df["detected"].sum()
+        # False negatives: detected=False
+        fn = (~type_df["detected"]).sum()
+        # False positives: detected=NaN
+        fp = type_df["detected"].isna().sum()
+
+        precision = tp / (tp + fp) if (tp + fp) > 0 else 0.0
+        recall = tp / (tp + fn) if (tp + fn) > 0 else 0.0
+
+        detected_df = type_df[type_df["detected"] == True]  # noqa: E712
+        mean_duration_delta = (
+            detected_df["duration_delta"].abs().mean() if len(detected_df) > 0 else 0.0
+        )
+        mean_start_delta = (
+            detected_df["start_delta"].abs().mean() if len(detected_df) > 0 else 0.0
+        )
+        mean_end_delta = (
+            detected_df["end_delta"].abs().mean() if len(detected_df) > 0 else 0.0
+        )
+
+        err[turn_type] = {
+            "precision": precision,
+            "recall": recall,
+            "mean_duration_delta": mean_duration_delta,
+            "mean_start_delta": mean_start_delta,
+            "mean_end_delta": mean_end_delta,
+        }
+
+    return err, err_df
 
 
 if __name__ == "__main__":
     # Example usage
-    df_ref = pd.read_csv("path\\to\\manual_labels.txt", sep="\t",header=None, names=["speaker", "foo", "start_sec", "end_sec", "duration_sec", "turn_type"])
-    df_ref = df_ref.replace({"speaker": {"Talker1": "P1", "Talker2": "P2"},"turn_type": {"t": "T", "b": "B"}})
+    df_ref = pd.read_csv(
+        "path\\to\\manual_labels.txt",
+        sep="\t",
+        header=None,
+        names=["speaker", "foo", "start_sec", "end_sec", "duration_sec", "turn_type"],
+    )
+    df_ref = df_ref.replace(
+        {
+            "speaker": {"Talker1": "P1", "Talker2": "P2"},
+            "turn_type": {"t": "T", "b": "B"},
+        }
+    )
     df_ref = df_ref.drop(columns=["foo"])
 
     df_est = pd.read_csv("outputs\\dyad\\merged_turns.txt", sep="\t")
-    
-    err,err_df = compute_all_errors(df_ref, df_est, min_overlap_ratio=0.5)
 
-    print("-"*60)    
+    err, err_df = compute_all_errors(df_ref, df_est, min_overlap_ratio=0.5)
+
+    print("-" * 60)
 
     print(f"Backchannel Precision: {err['BC']['precision']:.2f}")
     print(f"Backchannel Recall: {err['BC']['recall']:.2f}")
-    print(f"Backchannel Mean Duration Delta (abs): {err['BC']['mean_duration_delta']:.2f} seconds")
-    print(f"Backchannel Mean Start Delta (abs): {err['BC']['mean_start_delta']:.2f} seconds")
-    print(f"Backchannel Mean End Delta (abs): {err['BC']['mean_end_delta']:.2f} seconds")
+    print(
+        f"Backchannel Mean Duration Delta (abs): "
+        f"{err['BC']['mean_duration_delta']:.2f} seconds"
+    )
+    print(
+        f"Backchannel Mean Start Delta (abs): "
+        f"{err['BC']['mean_start_delta']:.2f} seconds"
+    )
+    print(
+        f"Backchannel Mean End Delta (abs): {err['BC']['mean_end_delta']:.2f} seconds"
+    )
 
-    print("-"*60)
+    print("-" * 60)
 
     print(f"Turn Precision: {err['T']['precision']:.2f}")
     print(f"Turn Recall: {err['T']['recall']:.2f}")
-    print(f"Turn Mean Duration Delta (abs): {err['T']['mean_duration_delta']:.2f} seconds")
+    print(
+        f"Turn Mean Duration Delta (abs): {err['T']['mean_duration_delta']:.2f} seconds"
+    )
     print(f"Turn Mean Start Delta (abs): {err['T']['mean_start_delta']:.2f} seconds")
     print(f"Turn Mean End Delta (abs): {err['T']['mean_end_delta']:.2f} seconds")
 
-    print("-"*60)
+    print("-" * 60)
 
     print(f"FTO Precision: {err['FTO']['precision']:.2f}")
     print(f"FTO Recall: {err['FTO']['recall']:.2f}")
-    print(f"FTO Mean Duration Delta (abs): {err['FTO']['mean_duration_delta']:.2f} seconds")
+    print(
+        f"FTO Mean Duration Delta (abs): "
+        f"{err['FTO']['mean_duration_delta']:.2f} seconds"
+    )
     print(f"FTO Mean Start Delta (abs): {err['FTO']['mean_start_delta']:.2f} seconds")
-    print(f"FTO Mean End Delta (abs): {err['FTO']['mean_end_delta']:.2f} seconds")  
+    print(f"FTO Mean End Delta (abs): {err['FTO']['mean_end_delta']:.2f} seconds")

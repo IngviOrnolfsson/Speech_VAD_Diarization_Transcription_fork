@@ -198,6 +198,7 @@ exclude = '''
   | pretrained_models/
   | natural-turn-transcription/
   | tmp_scripts/
+  | hyper/
   | speech_separation\.ipynb$
   | speech_separation_chunked\.py$
   | cp\.py$

@@ -13,8 +13,8 @@ import torch
 import torchaudio
 import wget
 
-# Enable TF32 for better performance on Ampere+ GPUs (RTX 30xx, A100, etc.)
-# This provides significant speedup with minimal precision loss for deep learning
+# Enable TF32 for better performance
+# This provides significant speedup
 torch.backends.cuda.matmul.allow_tf32 = True
 torch.backends.cudnn.allow_tf32 = True
 
@@ -23,6 +23,13 @@ torch.backends.cudnn.allow_tf32 = True
 warnings.filterwarnings(
     "ignore",
     message="std\\(\\): degrees of freedom is <= 0",
+    category=UserWarning,
+)
+
+# Suppress torchaudio deprecation warning about torchcodec
+warnings.filterwarnings(
+    "ignore",
+    message=".*torchaudio.load_with_torchcodec.*",
     category=UserWarning,
 )
 
@@ -71,6 +78,7 @@ class SpeechActivityDetector:
         vad_type: str = "rvad",
         auth_token: str | None = None,
         device: str | None = None,
+        rvad_threshold: float = 0.4,
     ) -> None:
         """
         Initialize the VAD instance.
@@ -85,7 +93,7 @@ class SpeechActivityDetector:
         if vad_type == "rvad":
             from rVADfast import rVADfast
 
-            self.vad = rVADfast()
+            self.vad = rVADfast(vad_threshold=rvad_threshold)
         elif vad_type == "silero":
             # Re-enable TF32 if disabled (already enabled globally at module level)
             self.model, utils = torch.hub.load(
@@ -268,10 +276,7 @@ class SpeechActivityDetector:
         return output_paths
 
     def run_vad(
-        self,
-        wav_path: str,
-        out_txt_path: str,
-        min_duration: float = 0.07,
+        self, wav_path: str, out_txt_path: str, min_duration: float = 0.07
     ) -> str:
         """
         Run Voice Activity Detection on a WAV file and save intervals to text file.
@@ -280,6 +285,7 @@ class SpeechActivityDetector:
             wav_path: Path to the input WAV file.
             out_txt_path: Path to the output text file for VAD intervals.
             min_duration: Minimum duration for speech segments to be included.
+            vad_threshold: Threshold for VAD decision.
 
         Returns:
             Path to the output text file.
