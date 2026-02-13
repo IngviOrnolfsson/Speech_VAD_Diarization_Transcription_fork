@@ -283,7 +283,32 @@ def tabulate_floor_transfers(
 
     df_fto = pd.DataFrame(floor_transfers)
 
+
     return df_fto
+
+def print_error_summary(err: dict) -> None:
+    """
+    Print a summary of turn error metrics.
+
+    Args:
+        err: Dictionary containing error metrics for each turn type.
+    """
+    for turn_type, metrics in err.items():
+        print("-" * 60)
+        print(f"{turn_type} Precision: {metrics['precision']:.2f}")
+        print(f"{turn_type} Recall: {metrics['recall']:.2f}")
+        print(
+            f"{turn_type} Mean Duration Delta (abs): "
+            f"{metrics['mean_duration_delta']:.2f} seconds"
+        )
+        print(
+            f"{turn_type} Mean Start Delta (abs): "
+            f"{metrics['mean_start_delta']:.2f} seconds"
+        )
+        print(
+            f"{turn_type} Mean End Delta (abs): "
+            f"{metrics['mean_end_delta']:.2f} seconds"
+        )
 
 
 def compute_all_errors(
@@ -348,6 +373,52 @@ def compute_all_errors(
 
     return err, err_df
 
+def compute_and_print_errors(
+  label_dir: str,
+  conv_id: str,
+  annotator_id: str = "",
+  min_overlap_ratio: float = 0.1,
+  print_summary: bool = True,
+) -> dict:
+    """
+    Compute turn errors and optionally print a summary.
+
+    Args:
+        label_dir: Directory containing ground truth label files.
+        conv_id: Conversation identifier to select the appropriate label file.
+        annotator_id: Identifier for the annotator of the labels.
+        min_overlap_ratio: Minimum overlap ratio for matching turns.
+        print_summary: Whether to print the error summary.
+    Returns:
+        Dictionary of error metrics for each turn type.
+    """
+
+    # Load manual labels
+    df_ref = pd.read_csv(
+        f"{label_dir}/{conv_id}{annotator_id}.txt",
+        sep="\t",
+        header=None,
+        names=["speaker", "foo", "start_sec", "end_sec", "duration_sec", "turn_type"],
+    )
+    # Replace common label variations and drop unused columns
+    df_ref = df_ref.replace(
+        {
+            "speaker": {"Talker1": "P1","p1":"P1", "Talker2": "P2","p2":"P2"},
+            "turn_type": {"t": "T", "b": "B"},
+        }
+    )
+    df_ref = df_ref.drop(columns=["foo"])
+
+    df_est = pd.read_csv("outputs/dyad/merged_turns.txt", sep="\t")
+
+    err, err_df = compute_all_errors(df_ref, df_est, min_overlap_ratio)
+
+    if print_summary:
+        print_error_summary(err)
+
+    return err
+
+
 
 if __name__ == "__main__":
     # Example usage
@@ -368,41 +439,5 @@ if __name__ == "__main__":
     df_est = pd.read_csv("outputs/dyad/merged_turns.txt", sep="\t")
 
     err, err_df = compute_all_errors(df_ref, df_est, min_overlap_ratio=0.1)
-    print(err)
 
-    print("-" * 60)
-
-    print(f"Backchannel Precision: {err['B']['precision']:.2f}")
-    print(f"Backchannel Recall: {err['B']['recall']:.2f}")
-    print(
-        f"Backchannel Mean Duration Delta (abs): "
-        f"{err['B']['mean_duration_delta']:.2f} seconds"
-    )
-    print(
-        f"Backchannel Mean Start Delta (abs): "
-        f"{err['B']['mean_start_delta']:.2f} seconds"
-    )
-    print(
-        f"Backchannel Mean End Delta (abs): {err['B']['mean_end_delta']:.2f} seconds"
-    )
-
-    print("-" * 60)
-
-    print(f"Turn Precision: {err['T']['precision']:.2f}")
-    print(f"Turn Recall: {err['T']['recall']:.2f}")
-    print(
-        f"Turn Mean Duration Delta (abs): {err['T']['mean_duration_delta']:.2f} seconds"
-    )
-    print(f"Turn Mean Start Delta (abs): {err['T']['mean_start_delta']:.2f} seconds")
-    print(f"Turn Mean End Delta (abs): {err['T']['mean_end_delta']:.2f} seconds")
-
-    print("-" * 60)
-
-    print(f"FTO Precision: {err['FTO']['precision']:.2f}")
-    print(f"FTO Recall: {err['FTO']['recall']:.2f}")
-    print(
-        f"FTO Mean Duration Delta (abs): "
-        f"{err['FTO']['mean_duration_delta']:.2f} seconds"
-    )
-    print(f"FTO Mean Start Delta (abs): {err['FTO']['mean_start_delta']:.2f} seconds")
-    print(f"FTO Mean End Delta (abs): {err['FTO']['mean_end_delta']:.2f} seconds")
+    print_error_summary(err)
