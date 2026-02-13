@@ -333,7 +333,6 @@ def compute_all_errors(
     df_fto_ref = tabulate_floor_transfers(df_ref)
     df_fto_est = tabulate_floor_transfers(df_est)
     fto_errors_df = compute_turn_errors(df_fto_ref, df_fto_est, min_overlap_ratio)
-    print(fto_errors_df)
 
     err_df = pd.concat([turn_errors_df, fto_errors_df], ignore_index=True)
 
